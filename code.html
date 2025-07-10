@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shopping Assistant</title>
+    <!-- Inter font from Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom Scrollbar Styling for Webkit browsers (Chrome, Safari) */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px; /* Width of the scrollbar */
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f0f0f0; /* Lighter track for light mode */
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c0c0c0; /* Lighter thumb for light mode */
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #a0a0a0; /* Slightly darker on hover */
+        }
+
+        /* Keyframes for the typing animation dots */
+        @keyframes bounceDot1 {
+            0%, 80%, 100% { transform: translateY(0); opacity: 1; }
+            40% { transform: translateY(-5px); opacity: 0.5; }
+        }
+        @keyframes bounceDot2 {
+            0%, 20%, 80%, 100% { transform: translateY(0); opacity: 1; }
+            50% { transform: translateY(-5px); opacity: 0.5; }
+        }
+        @keyframes bounceDot3 {
+            0%, 40%, 80%, 100% { transform: translateY(0); opacity: 1; }
+            60% { transform: translateY(-5px); opacity: 0.5; }
+        }
+        /* Apply animations to dots with different delays */
+        .animate-bounce-dot-1 {
+            animation: bounceDot1 1.4s infinite ease-in-out;
+        }
+        .animate-bounce-dot-2 {
+            animation: bounceDot2 1.4s infinite ease-in-out;
+        }
+        .animate-bounce-dot-3 {
+            animation: bounceDot3 1.4s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen bg-gray-50 font-inter antialiased">
+    <!-- Header section with soft gradient, subtle shadow, and rounded bottom corners -->
+    <header class="bg-gradient-to-r from-emerald-400 to-emerald-500 text-white p-4 shadow-lg rounded-b-xl flex flex-col sm:flex-row justify-between items-center z-10">
+        <!-- Shopping Assistant Logo and Title -->
+        <div class="flex items-center space-x-2 mb-2 sm:mb-0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shopping-bag text-white">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/>
+                <path d="M3 6h18"/>
+                <path d="M16 10a4 4 0 0 1-8 0"/>
+            </svg>
+            <h1 class="text-2xl sm:text-3xl font-bold tracking-wide text-white">Shopping Assistant</h1>
+        </div>
+
+        <!-- Right-aligned buttons -->
+        <div class="flex items-center space-x-2 flex-wrap justify-center sm:justify-end">
+            <!-- Product Recommendation Icon -->
+            <button
+                id="recommendProductButton"
+                class="p-2 sm:p-3 bg-white text-emerald-700 rounded-full shadow-md hover:bg-emerald-50 transition-all duration-300 active:scale-95 text-sm font-semibold flex items-center justify-center border border-emerald-200"
+                title="Get Product Recommendation"
+            >
+                <!-- Award icon from Lucide -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-award"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 22 12 18 17 22 15.79 13.89"/></svg>
+            </button>
+
+            <!-- Refresh Button -->
+            <button
+                id="refreshChatButton"
+                class="px-3 py-2 sm:px-4 sm:py-2 bg-white text-emerald-700 rounded-full shadow-md hover:bg-emerald-50 transition-all duration-300 active:scale-95 text-sm font-semibold flex items-center space-x-1 border border-emerald-200"
+                title="Start a new chat"
+            >
+                <!-- RefreshCcw icon from Lucide -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-ccw"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.76 2.75L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.76-2.75L21 16"/><path d="M21 21v-5h-5"/></svg>
+                <span>Refresh</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Chat Window - main content area for messages -->
+    <div
+        id="chatWindow"
+        class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50 custom-scrollbar relative"
+        style="scroll-behavior: smooth;"
+    >
+        <!-- Watermark -->
+        <div id="watermark" class="absolute inset-0 flex items-center justify-center pointer-events-none z-0 opacity-20 text-gray-300 text-5xl font-bold uppercase tracking-widest">
+            Shopping Assistant
+        </div>
+        <!-- Chat messages will be dynamically inserted here -->
+    </div>
+
+    <!-- Message Input Area -->
+    <div class="p-4 bg-white border-t border-gray-200 shadow-lg rounded-t-xl flex items-center sticky bottom-0 z-10">
+        <input
+            type="text"
+            id="messageInput"
+            class="flex-1 p-3 md:p-4 border border-gray-300 bg-white text-gray-800 rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-400 placeholder-gray-500 text-base transition-all duration-200"
+            placeholder="Type your message..."
+        />
+        <!-- Send button with icon -->
+        <button
+            id="sendMessageButton"
+            class="ml-3 p-3 md:p-4 rounded-full bg-emerald-500 text-white flex items-center justify-center transition-all duration-300 hover:bg-emerald-600 hover:shadow-md active:scale-95 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed"
+            title="Send message"
+        >
+            <!-- Send icon (Right Arrow) -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-right"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+    </div>
+
+    <!-- Product Recommendation Modal -->
+    <div id="productModal" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md max-h-[80vh] overflow-y-auto relative">
+            <div class="flex justify-between items-center mb-4 border-b pb-2">
+                <h2 class="text-2xl font-bold text-gray-800">Recommended Products</h2>
+                <button id="closeModalButton" class="text-gray-500 hover:text-gray-800 transition-colors duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+            </div>
+            <div id="productsList" class="space-y-4">
+                <!-- Products will be loaded here -->
+            </div>
+            <!-- Discount contact message area -->
+            <div id="discountMessageArea" class="mt-4 p-3 bg-emerald-50 text-emerald-800 rounded-lg hidden">
+                For more detailed information and exclusive discounts, feel free to contact us at <a href="mailto:alshakil.bd03@gmail.com" class="font-semibold underline">alshakil.bd03@gmail.com</a>.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- SIMULATED THIRD-PARTY PRODUCT DATA SERVICE ---
+        const mockProductDataService = async (query = '') => {
+            await new Promise(resolve => setTimeout(resolve, 800));
+
+            const allProducts = [
+                {
+                    id: 'laptop-a',
+                    name: 'UltraBook Pro 13',
+                    category: 'Laptop',
+                    price: 1200,
+                    features: ['Intel i7', '16GB RAM', '512GB SSD', '13-inch Retina Display', 'Lightweight'],
+                    reviews: { average: 4.7, count: 850 },
+                    pros: ['Extremely portable', 'High performance for everyday tasks', 'Excellent display'],
+                    cons: ['Higher price point', 'Limited ports', 'Not ideal for heavy gaming'],
+                    description: 'A premium lightweight laptop perfect for professionals and students on the go.'
+                },
+                {
+                    id: 'laptop-b',
+                    name: 'Gaming Beast 15',
+                    category: 'Laptop',
+                    price: 1500,
+                    features: ['AMD Ryzen 7', '32GB RAM', '1TB SSD', 'RTX 3060', '15-inch 144Hz Display'],
+                    reviews: { average: 4.5, count: 1200 },
+                    pros: ['Powerful gaming performance', 'Large, fast display', 'Ample storage and RAM'],
+                    cons: ['Heavy and bulky', 'Shorter battery life', 'Can run hot under load'],
+                    description: 'Unleash your gaming potential with this high-performance gaming laptop.'
+                },
+                {
+                    id: 'headphone-x',
+                    name: 'Noise Cancelling Headphones X',
+                    category: 'Headphones',
+                    price: 350,
+                    features: ['Active Noise Cancellation', '40-hour Battery', 'Comfortable Over-Ear', 'Bluetooth 5.2'],
+                    reviews: { average: 4.8, count: 2100 },
+                    pros: ['Superior noise cancellation', 'Long battery life', 'Very comfortable for long wear'],
+                    cons: ['Premium price', 'Bass can be overpowering for some', 'Not foldable'],
+                    description: 'Immerse yourself in pure sound with industry-leading noise cancellation.'
+                },
+                {
+                    id: 'headphone-y',
+                    name: 'Sport Earbuds Y',
+                    category: 'Headphones',
+                    price: 120,
+                    features: ['Sweatproof', 'Secure Fit', '8-hour Battery (plus case)', 'Bluetooth 5.0'],
+                    reviews: { average: 4.3, count: 950 },
+                    pros: ['Great for workouts', 'Snug and secure fit', 'Good value for money'],
+                    cons: ['Sound quality is good, not exceptional', 'Case is a bit bulky', 'No active noise cancellation'],
+                    description: 'Designed for active lifestyles, these earbuds stay put no matter how intense your workout.'
+                },
+                {
+                    id: 'bag-a',
+                    name: 'Classic Leather Tote',
+                    category: 'Bag',
+                    price: 250,
+                    features: ['Full-grain leather', 'Spacious main compartment', 'Internal pockets', 'Durable stitching'],
+                    reviews: { average: 4.6, count: 500 },
+                    pros: ['Timeless design', 'Very durable and long-lasting', 'Versatile for daily use'],
+                    cons: ['Heavier than fabric bags', 'Requires occasional leather care', 'Higher price'],
+                    description: 'An elegant and robust leather tote, perfect for work or everyday style.'
+                },
+                {
+                    id: 'bag-b',
+                    name: 'Lightweight Travel Backpack',
+                    category: 'Bag',
+                    price: 80,
+                    features: ['Water-resistant nylon', 'Multiple compartments', 'Padded straps', 'Foldable design'],
+                    reviews: { average: 4.4, count: 1100 },
+                    pros: ['Extremely lightweight', 'Great for travel and day trips', 'Budget-friendly'],
+                    cons: ['Less formal appearance', 'May not withstand very heavy loads over time', 'Limited aesthetic options'],
+                    description: 'A practical and lightweight backpack designed for convenience and easy packing.'
+                }
+            ];
+
+            if (!query) {
+                return allProducts;
+            }
+
+            const lowerCaseQuery = query.toLowerCase();
+            return allProducts.filter(product =>
+                product.name.toLowerCase().includes(lowerCaseQuery) ||
+                product.description.toLowerCase().includes(lowerCaseQuery) ||
+                product.category.toLowerCase().includes(lowerCaseQuery)
+            );
+        };
+        // --- END SIMULATED THIRD-PARTY PRODUCT DATA SERVICE ---
+
+        // Global API Key - will be populated by Canvas environment or use the provided key
+        const API_KEY = typeof __api_key !== 'undefined' ? __api_key : "AIzaSyDv2CO9poUllBy5YdpPMdbdloB5OrjzM58";
+
+        // DOM Elements
+        const chatWindow = document.getElementById('chatWindow');
+        const messageInput = document.getElementById('messageInput');
+        const sendMessageButton = document.getElementById('sendMessageButton');
+        const refreshChatButton = document.getElementById('refreshChatButton');
+        const recommendProductButton = document.getElementById('recommendProductButton');
+        const productModal = document.getElementById('productModal');
+        const closeModalButton = document.getElementById('closeModalButton');
+        const productsList = document.getElementById('productsList');
+        const discountMessageArea = document.getElementById('discountMessageArea');
+
+        // Global state variables
+        let chatHistory = [];
+        let isLoading = false;
+
+        // Helper function to convert markdown-like bolding and newlines to HTML
+        function formatMessageText(text) {
+            return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>');
+        }
+
+        // Function to display a message in the chat window
+        function displayMessage(message) {
+            const messageContainer = document.createElement('div');
+            messageContainer.classList.add('flex', 'relative', 'z-10');
+
+            const messageBubble = document.createElement('div');
+            messageBubble.classList.add('max-w-[80%]', 'md:max-w-[60%]', 'lg:max-w-[50%]', 'p-4', 'rounded-xl', 'shadow-sm', 'relative', 'break-words');
+
+            const messageText = document.createElement('p');
+            messageText.innerHTML = formatMessageText(message.parts[0].text);
+
+            if (message.role === 'user') {
+                messageContainer.classList.add('justify-end');
+                messageBubble.classList.add('bg-emerald-500', 'text-white', 'rounded-br-none', 'ml-auto');
+            } else {
+                messageContainer.classList.add('justify-start');
+                messageBubble.classList.add('bg-white', 'text-gray-800', 'rounded-bl-none', 'mr-auto');
+            }
+
+            messageBubble.appendChild(messageText);
+            messageContainer.appendChild(messageBubble);
+            chatWindow.appendChild(messageContainer);
+
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
+
+        // Function to show/hide loading indicator
+        function setLoading(state) {
+            isLoading = state;
+            messageInput.disabled = state;
+            sendMessageButton.disabled = state;
+            refreshChatButton.disabled = state;
+            recommendProductButton.disabled = state;
+
+            messageInput.placeholder = state ? "Please wait..." : "Type your message...";
+
+            if (state) {
+                sendMessageButton.classList.add('disabled:bg-gray-200', 'disabled:text-gray-400', 'disabled:cursor-not-allowed');
+                sendMessageButton.classList.remove('bg-emerald-500', 'text-white', 'hover:bg-emerald-600', 'hover:shadow-md');
+            } else {
+                sendMessageButton.classList.remove('disabled:bg-gray-200', 'disabled:text-gray-400', 'disabled:cursor-not-allowed');
+                sendMessageButton.classList.add('bg-emerald-500', 'text-white', 'hover:bg-emerald-600', 'hover:shadow-md');
+            }
+
+            const existingLoader = document.getElementById('loadingIndicator');
+            if (state && !existingLoader) {
+                const loaderContainer = document.createElement('div');
+                loaderContainer.id = 'loadingIndicator';
+                loaderContainer.classList.add('flex', 'justify-start', 'relative', 'z-10');
+
+                const loaderBubble = document.createElement('div');
+                loaderBubble.classList.add('max-w-[80%]', 'md:max-w-[60%]', 'lg:max-w-[50%]', 'p-4', 'rounded-xl', 'shadow-sm', 'bg-white', 'text-gray-800', 'rounded-bl-none', 'mr-auto');
+
+                loaderBubble.innerHTML = `
+                    <div class="flex items-center">
+                        <span class="text-2xl leading-none animate-bounce-dot-1 text-gray-500">.</span>
+                        <span class="text-2xl leading-none animate-bounce-dot-2 text-gray-500">.</span>
+                        <span class="text-2xl leading-none animate-bounce-dot-3 text-gray-500">.</span>
+                        <span class="ml-2 text-gray-500">Thinking...</span>
+                    </div>
+                `;
+                loaderContainer.appendChild(loaderBubble);
+                chatWindow.appendChild(loaderContainer);
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            } else if (!state && existingLoader) {
+                existingLoader.remove();
+            }
+        }
+
+        // Function to send message to the Gemini API for general chat
+        const sendMessage = async () => {
+            const currentMessageText = messageInput.value.trim();
+            if (currentMessageText === '') return;
+
+            console.log("Using API Key:", API_KEY); // Log the API key being used
+
+            if (!API_KEY) {
+                displayMessage({ role: 'model', parts: [{ text: "API Key is not configured. Please ensure your API key is correctly set up for the Gemini API to function." }] });
+                setLoading(false);
+                return;
+            }
+
+            const newMessage = { role: 'user', parts: [{ text: currentMessageText }] };
+            chatHistory.push(newMessage);
+            displayMessage(newMessage);
+            messageInput.value = '';
+            setLoading(true);
+
+            try {
+                const initialPrompt = {
+                    role: "user",
+                    parts: [{
+                        text: `You are a friendly, empathetic, and highly knowledgeable product selection consultant. Your primary goal is to help your friend (the user) not just find a product, but truly understand their unique needs and challenges.
+                        Always speak in a natural, friendly, and human-like tone. Never mention that you are an AI or a bot.
+                        Your responses should be very short and concise, not lengthy.
+
+                        **Special Instruction for Greetings:** If the user simply greets you (e.g., "Hi", "Hello", "Hey"), respond briefly and politely. For example, "Hey there!", "Hi!", or "Hello!". Then, gently guide them back to their product needs.
+
+                        **Questioning Style:** When asking questions to understand their needs, ask them one at a time. Keep each question concise and focused. Maintain a beautiful and friendly speaking structure throughout.
+
+                        **Core Features to Emphasize:**
+                        1.  **Understanding Customer Needs:** Actively listen to their initial problem and ask follow-up questions to dig deeper into their specific situation, preferences, and what they hope to achieve.
+                        2.  **Helping Customers Understand Their Needs:** Guide them to clarify their own requirements. If their initial request is vague, ask clarifying questions in a friendly way to help them articulate their ideal solution. For example, "That's a great start! To help me narrow it down, could you tell me a bit more about how you plan to use it?" or "What's most important to you, like budget, size, or specific features?"
+                        3.  **Proactive Information Gathering for "Bag Product":** If the user mentions a "bag" or similar item, immediately ask about their budget AND their primary focus. Specifically, ask if they prioritize "beauty/design," "durability/longevity," "cost-effectiveness," "performance," "sustainability," or other specific qualities. Ask these as distinct, single questions if possible.
+                        4.  **Deep Analysis and Product Recommendation:** Once you have a clear picture of their needs (including budget and priorities), you will perform a deep analysis. Frame your recommendations as insights gathered from "deep research" and by reviewing "various articles" or "expert reviews." You can say things like, "Based on our chat and what I've learned from my research..." or "Looking at various reviews and articles, it seems like [Product Type] would be a great fit because..."
+                        5.  **Feature Improvement Requests:** When a user expresses a need or suggests an improvement for a product or feature, actively inquire about their priorities and preferences to tailor your response. Ask clarifying questions to understand whether they value aesthetics (e.g., beauty, design), durability (e.g., longevity, robustness), cost-effectiveness (e.g., budget-friendly), performance (e.g., speed, efficiency), sustainability, or other specific qualities. Then, provide a response that aligns with their stated priorities, offering relevant suggestions or explanations to address their need effectively.
+
+                        Your responses should be very short and concise, not lengthy.
+                        Once you have a clear picture, you will recommend the best product or type of product for their problem, with confidence and a friendly assurance like "Insha Allah" if it's appropriate.
+                        Start by warmly greeting your friend and asking them what kind of problem they're trying to solve or what they're looking for help with today.
+                        `
+                    }]
+                };
+
+                let productDataString = '';
+                const lastUserMessageText = chatHistory[chatHistory.length - 1].parts[0].text.toLowerCase();
+                if (lastUserMessageText.includes('bag') || lastUserMessageText.includes('laptop') || lastUserMessageText.includes('headphone')) {
+                    const products = await mockProductDataService(lastUserMessageText);
+                    productDataString = JSON.stringify(products, null, 2);
+                }
+
+                const payload = {
+                    contents: [
+                        initialPrompt,
+                        ...chatHistory,
+                        ...(productDataString ? [{ role: 'user', parts: [{ text: `(Internal data for analysis: ${productDataString})` }] }] : [])
+                    ],
+                };
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("API response not OK for general chat:", response.status, errorData);
+                    throw new Error(`API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+                }
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    let aiResponseText = result.candidates[0].content.parts[0].text;
+
+                    const discountKeywords = ['discount', 'offer', 'deal', 'promo', 'coupon'];
+                    const userAskedForDiscount = discountKeywords.some(keyword => lastUserMessageText.includes(keyword));
+
+                    if (userAskedForDiscount) {
+                        aiResponseText += "\n\nFor more detailed information and exclusive discounts, feel free to contact us at **alshakil.bd03@gmail.com**.";
+                    }
+
+                    const aiMessage = { role: 'model', parts: [{ text: aiResponseText }] };
+                    chatHistory.push(aiMessage);
+                    displayMessage(aiMessage);
+                } else {
+                    console.error("Unexpected API response structure for general chat (missing candidates/content/parts):", result);
+                    const errorMessage = { role: 'model', parts: [{ text: "I apologize, but I couldn't generate a response. The AI did not provide valid content. Please try again." }] };
+                    chatHistory.push(errorMessage);
+                    displayMessage(errorMessage);
+                }
+            } catch (error) {
+                console.error("Error communicating with Gemini API for general chat:", error);
+                const errorMessage = { role: 'model', parts: [{ text: `I'm having trouble connecting right now. This might be a network issue or a problem with the AI service. Error: ${error.message}. Please check your internet connection or try again later.` }] };
+                chatHistory.push(errorMessage);
+                displayMessage(errorMessage);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        // Function to handle refreshing the chat
+        const handleRefreshChat = () => {
+            chatHistory = [];
+            chatWindow.innerHTML = '';
+            const watermarkDiv = document.createElement('div');
+            watermarkDiv.id = 'watermark';
+            watermarkDiv.className = 'absolute inset-0 flex items-center justify-center pointer-events-none z-0 opacity-20 text-gray-300 text-5xl font-bold uppercase tracking-widest';
+            watermarkDiv.textContent = 'Shopping Assistant';
+            chatWindow.appendChild(watermarkDiv);
+
+            messageInput.value = '';
+            setLoading(false);
+            displayMessage({ role: 'model', parts: [{ text: "Hey there, friend! What kind of problem are you trying to solve, or what are you looking for help with today? Tell me all about it!" }] });
+        };
+
+        // Function to display products in the modal
+        const displayProductsInModal = (products) => {
+            productsList.innerHTML = '';
+            discountMessageArea.classList.add('hidden');
+
+            if (!products || products.length === 0) {
+                productsList.innerHTML = '<p class="text-center text-gray-500">No specific recommendations at this moment. Please provide more details in the chat!</p>';
+                return;
+            }
+
+            products.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.classList.add('bg-gray-50', 'p-4', 'rounded-lg', 'shadow-sm', 'border', 'border-gray-100', 'flex', 'flex-col');
+                productCard.innerHTML = `
+                    <h3 class="text-lg font-semibold text-emerald-700 mb-1">${product.name}</h3>
+                    <p class="text-gray-600 text-sm"><strong>Category:</strong> ${product.category}</p>
+                    <p class="text-gray-800 font-bold text-lg mb-2">$${product.price.toFixed(2)}</p>
+                    <p class="text-gray-700 text-sm mb-2">${product.description}</p>
+                    <div class="text-xs text-gray-500 mb-3">
+                        <p><strong>Features:</strong> ${product.features.join(', ')}</p>
+                        <p><strong>Reviews:</strong> ${product.reviews.average} (${product.reviews.count} reviews)</p>
+                        <p><strong>Pros:</strong> ${product.pros.join(', ')}</p>
+                        <p><strong>Cons:</strong> ${product.cons.join(', ')}</p>
+                    </div>
+                    <button class="discount-button mt-auto px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold hover:bg-emerald-200 transition-colors duration-200 flex items-center justify-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-tag"><path d="M12.22 2H2v10.22a2 2 0 0 0 .59 1.41l9.23 9.23a2.4 2.4 0 0 0 3.4 0l6.59-6.59a2.4 2.4 0 0 0 0-3.4L13.63 2.59a2 2 0 0 0-1.41-.59Z"/><circle cx="7" cy="7" r="2"/></svg>
+                        <span>Get Discount!</span>
+                    </button>
+                `;
+                productsList.appendChild(productCard);
+            });
+
+            document.querySelectorAll('.discount-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    discountMessageArea.classList.remove('hidden');
+                    discountMessageArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                });
+            });
+        };
+
+        // Function to handle product recommendation request
+        const handleProductRecommendation = async () => {
+            setLoading(true);
+
+            console.log("Using API Key:", API_KEY); // Log the API key being used
+
+            if (!API_KEY) {
+                displayMessage({ role: 'model', parts: [{ text: "API Key is not configured. Please ensure your API key is correctly set up for the Gemini API to function." }] });
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const availableProducts = await mockProductDataService();
+
+                const recommendationPrompt = {
+                    role: "user",
+                    parts: [{
+                        text: `Based on our current conversation history (up to this point), please recommend the TOP 1-3 products that best fit the user's needs.
+                        Provide your recommendation as a JSON array of objects, where each object represents a product from the provided list.
+                        If you cannot find a suitable product, return an empty array.
+                        Include the 'id', 'name', 'category', 'price', 'features', 'reviews', 'pros', 'cons', and 'description' for each recommended product.
+                        Do NOT include any additional text outside the JSON array in your response.
+
+                        Current chat history for analysis:
+                        ${JSON.stringify(chatHistory, null, 2)}
+
+                        Available products for consideration:
+                        ${JSON.stringify(availableProducts, null, 2)}
+                        `
+                    }]
+                };
+
+                const payload = {
+                    contents: [
+                        recommendationPrompt
+                    ],
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    "id": { "type": "STRING" },
+                                    "name": { "type": "STRING" },
+                                    "category": { "type": "STRING" },
+                                    "price": { "type": "NUMBER" },
+                                    "features": {
+                                        "type": "ARRAY",
+                                        "items": { "type": "STRING" }
+                                    },
+                                    "reviews": {
+                                        "type": "OBJECT",
+                                        "properties": {
+                                            "average": { "type": "NUMBER" },
+                                            "count": { "type": "NUMBER" }
+                                        }
+                                    },
+                                    "pros": {
+                                        "type": "ARRAY",
+                                        "items": { "type": "STRING" }
+                                    },
+                                    "cons": {
+                                        "type": "ARRAY",
+                                        "items": { "type": "STRING" }
+                                    },
+                                    "description": { "type": "STRING" }
+                                },
+                                "required": ["id", "name", "category", "price", "features", "reviews", "pros", "cons", "description"]
+                            }
+                        }
+                    }
+                };
+
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("API response not OK for recommendation:", response.status, errorData);
+                    throw new Error(`API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+                }
+
+                const result = await response.json();
+
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const jsonString = result.candidates[0].content.parts[0].text;
+                    let recommendedProducts = [];
+
+                    try {
+                        recommendedProducts = JSON.parse(jsonString);
+                    } catch (parseError) {
+                        console.error("Error parsing AI JSON response for recommendation:", parseError, "Raw AI response:", jsonString);
+                        displayProductsInModal([]); // Show empty state in modal
+                        productModal.classList.remove('hidden');
+                        const errorMessage = { role: 'model', parts: [{ text: "I received a recommendation, but there was an issue processing it. The AI might have provided an unexpected format. Please try again." }] };
+                        chatHistory.push(errorMessage);
+                        displayMessage(errorMessage);
+                        return;
+                    }
+
+                    displayProductsInModal(recommendedProducts);
+                    productModal.classList.remove('hidden');
+
+                } else {
+                    console.error("Unexpected API response structure for recommendation (missing candidates/content/parts):", result);
+                    displayProductsInModal([]); // Show empty state in modal
+                    productModal.classList.remove('hidden');
+                    const errorMessage = { role: 'model', parts: [{ text: "I apologize, but I couldn't generate a product recommendation. The AI did not provide a valid response. Please try again." }] };
+                    chatHistory.push(errorMessage);
+                    displayMessage(errorMessage);
+                }
+            } catch (error) {
+                console.error("Error communicating with Gemini API for recommendation:", error);
+                const errorMessage = { role: 'model', parts: [{ text: `I'm having trouble getting recommendations right now. This might be a network issue or a problem with the AI service. Error: ${error.message}. Please check your internet connection or try again later.` }] };
+                chatHistory.push(errorMessage);
+                displayMessage(errorMessage);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+
+        // Event Listeners
+        sendMessageButton.addEventListener('click', sendMessage);
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !isLoading) {
+                sendMessage();
+            }
+        });
+        refreshChatButton.addEventListener('click', handleRefreshChat);
+        recommendProductButton.addEventListener('click', handleProductRecommendation);
+        closeModalButton.addEventListener('click', () => {
+            productModal.classList.add('hidden');
+            discountMessageArea.classList.add('hidden');
+        });
+
+
+        // Initial greeting when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            displayMessage({ role: 'model', parts: [{ text: "Hey there, friend! What kind of problem are you trying to solve, or what are you looking for help with today? Tell me all about it!" }] });
+        });
+    </script>
+</body>
+</html>
