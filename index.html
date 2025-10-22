@@ -3,37 +3,954 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shopping Assistant</title>
-    <!-- Inter font from Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Tailwind CSS CDN -->
+    <title>Sonaro - শক্তিশালী কণ্ঠ জেনারেটর</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Custom Scrollbar Styling for Webkit browsers (Chrome, Safari) */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 8px; /* Width of the scrollbar */
+        body {
+            font-family: 'Hind+Siliguri', sans-serif;
         }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f0f0f0; /* Lighter track for light mode */
-            border-radius: 10px;
+        .custom-loader { /* Loader for audio section */
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top: 4px solid #22d3ee;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #c0c0c0; /* Lighter thumb for light mode */
-            border-radius: 10px;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #a0a0a0; /* Slightly darker on hover */
+        .transition-all {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .language-list::-webkit-scrollbar { width: 6px; }
+        .language-list::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.1); }
+        .language-list::-webkit-scrollbar-thumb { background: #06b6d4; border-radius: 3px; }
+        .language-list::-webkit-scrollbar-thumb:hover { background: #0891b2; }
+
+        audio {
+            filter: invert(1) hue-rotate(180deg) brightness(1.2);
         }
 
-        /* Keyframes for the typing animation dots */
-        @keyframes bounceDot1 {
-            0%, 80%, 100% { transform: translateY(0); opacity: 1; }
-            40% { transform: translateY(-5px); opacity: 0.5; }
+        /* Modal styles */
+        .modal-overlay {
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
-        @keyframes bounceDot2 {
-            0%, 20%, 80%, 100% { transform: translateY(0); opacity: 1; }
-            50% { transform: translateY(-5px); opacity: 0.5; }
+        .modal-scale-enter-active, .modal-scale-leave-active {
+            transition: all 0.3s ease;
         }
+        .modal-scale-enter-from, .modal-scale-leave-to {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+        /* Custom input styles for dark theme */
+        .dark-input {
+            background-color: #1e293b; /* slate-800 */
+            border-color: #334155; /* slate-700 */
+            color: #e2e8f0; /* slate-200 */
+        }
+        .dark-input:focus {
+            border-color: #06b6d4; /* cyan-500 */
+            outline: 1px solid #06b6d4;
+        }
+        .dark-input::placeholder {
+            color: #64748b; /* slate-500 */
+        }
+        .dark-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        /* Generating Overlay Styles */
+        .generating-overlay {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); /* slate-900 to slate-800 */
+        }
+        .sound-wave > div {
+            background-color: #22d3ee; /* cyan-400 */
+            height: 100%;
+            width: 6px;
+            display: inline-block;
+            margin: 0 2px;
+            border-radius: 3px;
+            animation: soundwave-animation 1.2s infinite ease-in-out;
+        }
+        .sound-wave > div:nth-child(2) { animation-delay: -1.1s; }
+        .sound-wave > div:nth-child(3) { animation-delay: -1.0s; }
+        .sound-wave > div:nth-child(4) { animation-delay: -0.9s; }
+        .sound-wave > div:nth-child(5) { animation-delay: -0.8s; }
+
+        @keyframes soundwave-animation {
+            0%, 40%, 100% { transform: scaleY(0.4); }
+            20% { transform: scaleY(1.0); }
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-200 flex flex-col min-h-screen">
+
+    <!-- Header -->
+    <header id="app-header" class="w-full p-4 md:p-6 border-b border-slate-700/50 transition-opacity duration-500">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+             <h1 class="text-3xl font-bold text-white tracking-wide">সোনালী কণ্ঠ (Sonaro)</h1>
+             <p class="text-cyan-400 font-light hidden sm:block">ভবিষ্যতের ভয়েস জেনারেটর</p>
+        </div>
+    </header>
+
+    <main id="main-content" class="w-full max-w-7xl mx-auto p-4 md:p-8 flex-grow transition-opacity duration-500">
+        <!-- Main Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+            <!-- Left Column: Main Input & Editors -->
+            <div class="lg:col-span-3 flex flex-col space-y-4">
+                <div class="bg-slate-900 rounded-2xl p-6 border border-slate-700/50 flex flex-col h-full">
+                    <label for="text-input" class="text-lg font-semibold text-gray-300 mb-2">১. আপনার স্ক্রিপ্ট লিখুন</label>
+                    <textarea id="text-input" rows="15" class="w-full p-4 dark-input rounded-lg focus:ring-2 focus:ring-cyan-500 transition-all flex-grow border" placeholder="আপনার বক্তৃতা, কবিতা বা বর্ণনা এখানে লিখুন..."></textarea>
+                    <div class="flex justify-between items-center mt-2">
+                        <div class="text-xs text-gray-400 font-light">
+                             <span id="auto-detect-status" class="transition-all opacity-0">ভাষা সনাক্ত করা হচ্ছে...</span>
+                        </div>
+                        <div id="char-counter" class="text-right text-sm text-gray-400">0 / 4500</div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-3 mt-4">
+                        <button id="change-tone-btn" class="hidden w-full bg-slate-800 border border-slate-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-600 hover:border-indigo-500 transition-all transform hover:scale-105 flex items-center justify-center gap-2">
+                           🎙️ ভয়েস টোন ইঞ্জিনিয়ার
+                        </button>
+                        <button id="translate-script-btn" class="hidden w-full bg-slate-800 border border-slate-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 hover:border-green-500 transition-all transform hover:scale-105 flex items-center justify-center gap-2">
+                           🌐 অনুবাদক
+                        </button>
+                    </div>
+
+                    <!-- Collapsible Section for Tone -->
+                    <div id="collapsible-container" class="mt-4 space-y-4">
+                        <div id="custom-tone-section" class="hidden overflow-hidden transition-all duration-500 max-h-0">
+                             <div class="p-4 border border-slate-700 border-dashed rounded-lg bg-slate-800/50">
+                                <label for="custom-tone-input" class="text-md font-semibold text-gray-400">আপনার কাস্টম টোন লিখুন:</label>
+                                <input type="text" id="custom-tone-input" class="mt-2 w-full p-2 dark-input rounded-lg focus:ring-2 focus:ring-indigo-500 border" placeholder="উদাহরণ: একজন সংবাদ পাঠকের মতো...">
+                                <button id="apply-tone-btn" class="mt-3 w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all flex items-center justify-center gap-2 transform hover:scale-102">
+                                    <span id="apply-tone-loader" class="hidden w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span> টোন প্রয়োগ করুন
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Translate section is now a modal -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Controls -->
+            <div class="lg:col-span-2 flex flex-col space-y-6">
+                <div class="bg-slate-900 rounded-2xl p-6 border border-slate-700/50">
+                    <label class="text-lg font-semibold text-gray-300">২. ভয়েস কনফিগার করুন</label>
+                    <div class="space-y-4 mt-4">
+                        <!-- Language Selector -->
+                        <div class="relative">
+                            <label for="language-selector-btn" class="text-sm font-medium text-gray-400">ভয়েসের ভাষা (স্বয়ংক্রিয়ভাবে সনাক্ত)</label>
+                            <button id="language-selector-btn" class="w-full mt-1 p-3 dark-input rounded-lg text-left transition-all border">
+                                <span id="selected-language-text">বাংলা (Bengali)</span>
+                            </button>
+                            <div id="language-dropdown" class="hidden absolute z-10 w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-lg">
+                                <input type="text" id="language-search" class="w-full p-2 border-b border-slate-700 bg-slate-900 text-gray-200" placeholder="ভাষা বা দেশের নাম খুঁজুন...">
+                                <div id="language-list" class="max-h-64 overflow-y-auto language-list p-1"></div>
+                            </div>
+                        </div>
+                        <!-- Voice Selector -->
+                        <div>
+                            <label for="voice-select" class="text-sm font-medium text-gray-400">কণ্ঠ নির্বাচন করুন</label>
+                            <select id="voice-select" class="w-full mt-1 p-3 dark-input dark-select rounded-lg focus:ring-2 focus:ring-cyan-500 transition-all border"></select>
+                        </div>
+                        <div>
+                             <label for="speech-style-select" class="text-sm font-medium text-gray-400">বক্তৃতার ধরণ (ঐচ্ছিক)</label>
+                             <select id="speech-style-select" class="w-full mt-1 p-3 dark-input dark-select rounded-lg focus:ring-2 focus:ring-cyan-500 transition-all border disabled:opacity-50 disabled:bg-slate-800/30 disabled:cursor-not-allowed">
+                                <option value="none">কোনোটিই নয় (None)</option>
+                                <option value="emotional">আবেগঘন বক্তৃতা (Emotional)</option>
+                                <option value="rhythmic">রিদমিক বর্ণনা (Rhythmic)</option>
+                                <option value="motivational">অনুপ্রেরণামূলক (Motivational)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 rounded-2xl p-6 border border-slate-700/50 flex flex-col flex-grow">
+                    <label class="text-lg font-semibold text-gray-300">৩. ভয়েস তৈরি করুন</D>
+                    <div class="pt-4 flex-grow flex flex-col justify-end">
+                        <button id="convert-btn" class="w-full bg-gradient-to-r from-cyan-600 to-teal-600 text-white font-bold py-4 px-6 rounded-lg transition-all transform hover:scale-105 hover:from-cyan-500 hover:to-teal-500 text-lg">
+                            জেনারেট করুন
+                        </button>
+                    </div>
+                     <div id="audio-output" class="hidden mt-6 flex flex-col items-center space-y-4">
+                         <div id="loader" class="custom-loader hidden"></div>
+                        <audio id="audio-player" controls class="w-full rounded-lg"></audio>
+                        <a id="download-link" class="w-full text-center bg-gradient-to-r from-emerald-500 to-green-500 text-white font-bold py-3 px-6 rounded-lg hover:from-emerald-600 hover:to-green-600 transition-transform transform hover:scale-105 shadow-lg hidden">
+                            ডাউনলোড করুন (WAV)
+                        </a>
+                    </div>
+                    <div id="error-message" class="text-red-400 text-center font-semibold hidden mt-4"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer id="app-footer" class="text-center text-sm text-gray-500 p-4 w-full transition-opacity duration-500">
+         <button id="api-settings-btn" class="hover:text-cyan-300 font-semibold">API কী সেটিংস</button>
+         <div id="api-settings-section" class="hidden overflow-hidden transition-all duration-500 max-h-0 max-w-lg mx-auto">
+             <div class="mt-2 p-4 border border-slate-700 border-dashed rounded-lg bg-slate-900">
+                 <label for="api-key-input" class="text-md font-semibold text-gray-400">আপনার API কী লিখুন:</label>
+                 <input type="password" id="api-key-input" class="mt-2 w-full p-2 dark-input rounded-lg focus:ring-2 focus:ring-cyan-500 border">
+                 <div class="flex gap-2 mt-3">
+                    <button id="save-api-key-btn" class="w-full bg-cyan-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-cyan-700 transition-all">সংরক্ষণ করুন</button>
+                    <button id="use-default-key-btn" class="w-full bg-slate-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-slate-700 transition-all">ডিফল্ট</button>
+                 </div>
+                  <p id="api-status" class="text-xs text-center mt-2 font-medium hidden"></p>
+             </div>
+         </div>
+     </footer>
+
+    <!-- Generating Overlay -->
+    <div id="generating-overlay" class="generating-overlay fixed inset-0 z-50 flex flex-col items-center justify-center p-8 text-center opacity-0 hidden transition-opacity duration-500">
+        <!-- Ad Section -->
+        <div class="mb-12 flex flex-col items-center">
+             <img src="red.jpg"
+                 alt="Advertisement Banner"
+                 class="max-w-xl w-full h-auto rounded-lg shadow-lg mb-6 object-cover"
+                 style="max-height: 40vh;"
+                 onerror="this.onerror=null;this.src='https://placehold.co/800x400/1e293b/475569?text=Advertisement&font=hind-siliguri';">
+            <!-- Banner - Accepts image, gif, video (video tag needed for video) -->
+            <!-- Placeholder Title for Ad Space -->
+            <h2 class="text-3xl font-semibold text-gray-300 mb-4">বিশেষ অফার!</h2>
+            <!-- Placeholder Button for Ad Space -->
+            <button class="bg-gradient-to-r from-pink-500 to-rose-500 text-white font-semibold py-3 px-8 rounded-lg text-lg shadow-lg hover:from-pink-600 hover:to-rose-600 transition-all">
+                আরও জানুন
+            </button>
+        </div>
+
+        <!-- Generation Progress Section -->
+        <div class="flex flex-col items-center">
+            <p class="text-2xl font-semibold text-cyan-300 mb-4">আপনার ভয়েস তৈরি হচ্ছে...</p>
+            <div class="sound-wave h-10 flex items-center justify-center mb-4">
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <p class="text-sm text-gray-400">ভয়েস বিশ্লেষণ এবং সংশ্লেষণ করা হচ্ছে</p>
+        </div>
+    </div>
+
+
+    <!-- Performance Overview Modal -->
+    <div id="overview-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay hidden modal-scale-enter-from">
+        <div class="bg-slate-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden border border-cyan-500/50"> {/* Increased width */}
+            <div class="p-4 flex justify-between items-center border-b border-slate-700">
+                <h2 class="text-xl font-bold text-white">পারফরম্যান্স ওভারভিউ</h2>
+                <button id="close-modal-overview-btn" class="text-gray-400 hover:text-white text-3xl leading-none">&times;</button>
+            </div>
+            <div id="modal-overview-content" class="p-6 text-gray-300 max-h-[75vh] overflow-y-auto language-list"> {/* Increased height */}
+                <!-- Content will be injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Translate Modal -->
+    <div id="translate-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay hidden modal-scale-enter-from">
+        <div class="bg-slate-800 rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden border border-green-500/50"> {/* Increased width */}
+            <div class="p-4 flex justify-between items-center border-b border-slate-700">
+                <h2 class="text-xl font-bold text-white">স্ক্রিপ্ট অনুবাদ করুন</h2>
+                <button id="close-modal-translate-btn" class="text-gray-400 hover:text-white text-3xl leading-none">&times;</button>
+            </div>
+            <div class="p-6 space-y-4">
+                 <label for="target-language-selector-btn-modal" class="text-md font-semibold text-gray-400">কোন ভাষায় অনুবাদ করতে চান?</label>
+                <div class="relative">
+                    <button id="target-language-selector-btn-modal" class="w-full p-2 text-left dark-input rounded-lg border">
+                        <span id="selected-target-language-text-modal">ইংরেজি (English (US))</span>
+                    </button>
+                    <div id="target-language-dropdown-modal" class="hidden absolute z-20 w-full mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-lg">
+                        <input type="text" id="target-language-search-modal" class="w-full p-2 border-b border-slate-700 bg-slate-900 text-gray-200" placeholder="ভাষা খুঁজুন...">
+                        <div id="target-language-list-modal" class="max-h-64 overflow-y-auto language-list p-1"></div> {/* Increased height */}
+                    </div>
+                </div>
+                <button id="apply-translation-btn-modal" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-3 px-4 rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all flex items-center justify-center gap-2 transform hover:scale-102">
+                    <span id="apply-translation-loader-modal" class="hidden w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span> অনুবাদ করুন
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // DOM Elements
+        const appHeader = document.getElementById('app-header');
+        const mainContent = document.getElementById('main-content');
+        const appFooter = document.getElementById('app-footer');
+        const generatingOverlay = document.getElementById('generating-overlay');
+
+        const textInput = document.getElementById('text-input');
+        const languageSelectorBtn = document.getElementById('language-selector-btn');
+        const selectedLanguageText = document.getElementById('selected-language-text');
+        const languageDropdown = document.getElementById('language-dropdown');
+        const languageSearch = document.getElementById('language-search');
+        const languageList = document.getElementById('language-list');
+        const voiceSelect = document.getElementById('voice-select');
+        const speechStyleSelect = document.getElementById('speech-style-select');
+        const convertBtn = document.getElementById('convert-btn');
+        const audioOutput = document.getElementById('audio-output');
+        const audioPlayer = document.getElementById('audio-player');
+        const downloadLink = document.getElementById('download-link');
+        const loader = document.getElementById('loader'); // Loader inside audio output
+        const errorMessage = document.getElementById('error-message');
+        const charCounter = document.getElementById('char-counter');
+        const autoDetectStatus = document.getElementById('auto-detect-status');
+
+        // Gemini Feature Elements
+        const changeToneBtn = document.getElementById('change-tone-btn');
+        const customToneSection = document.getElementById('custom-tone-section'); // Collapsible section for Tone
+        const translateScriptBtn = document.getElementById('translate-script-btn');
+        // Translate elements are now in the modal, assigned in initializeApp
+
+        // Modal elements
+        const overviewModal = document.getElementById('overview-modal');
+        const modalOverviewContent = document.getElementById('modal-overview-content');
+        const closeModalOverviewBtn = document.getElementById('close-modal-overview-btn');
+        const translateModal = document.getElementById('translate-modal');
+        const closeModalTranslateBtn = document.getElementById('close-modal-translate-btn');
+        let targetLanguageSelectorBtnModal, selectedTargetLanguageTextModal, targetLanguageDropdownModal, targetLanguageSearchModal, targetLanguageListModal, applyTranslationBtnModal, applyTranslationLoaderModal; // Translate modal elements assigned in init
+
+        // API Key Elements
+        const apiSettingsBtn = document.getElementById('api-settings-btn');
+        const apiSettingsSection = document.getElementById('api-settings-section');
+        let apiKeyInput, saveApiKeyBtn, useDefaultKeyBtn, apiStatus; // Will be assigned in init
+        let customToneInput, applyToneBtn, applyToneLoader; // Tone elements assigned in init
+
+        const DEFAULT_API_KEY = 'AIzaSyD5dzqlQV2MwPpxj81rtjOZJ9vVyV14GSM';
+        let apiKey = localStorage.getItem('userApiKey') || DEFAULT_API_KEY;
+        let selectedLanguage = 'Bengali';
+        let selectedTargetLanguage = 'English';
+        let selectedTargetLanguageDisplay = 'ইংরেজি (English (US))'; // Added for display consistency
+        let debounceTimeout;
+
+        const MAX_CHARS = 4500;
+        const MIN_LOADING_TIME = 5000; // Minimum 5 seconds loading screen
+
+        // Data (Languages and Voices remain the same)
+        const allLanguages = [
+            { code: 'Bengali', name: 'Bengali', bnName: 'বাংলা', countries: ['Bangladesh', 'India'], nativeTo: ['Bangladesh'] },
+            { code: 'Hindi', name: 'Hindi', bnName: 'হিন্দি', countries: ['India', 'Fiji', 'Nepal'], nativeTo: ['India'] },
+            { code: 'Urdu', name: 'Urdu', bnName: 'উর্দু', countries: ['Pakistan', 'India'], nativeTo: ['Pakistan'] },
+            { code: 'English', name: 'English (US)', bnName: 'ইংরেজি (US)', countries: ['USA', 'United States', 'UK', 'United Kingdom', 'Canada', 'Australia', 'India', 'Nigeria'], nativeTo: ['USA', 'United States', 'UK', 'United Kingdom', 'Canada', 'Australia'] },
+            { code: 'ar-EG', name: 'Arabic (Egypt)', bnName: 'আরবি (মিশর)', countries: ['Egypt', 'Sudan'], nativeTo: ['Egypt'] },
+            { code: 'de-DE', name: 'German', bnName: 'জার্মান', countries: ['Germany', 'Austria', 'Switzerland'], nativeTo: ['Germany', 'Austria'] },
+            { code: 'es-US', name: 'Spanish (US)', bnName: 'স্প্যানিশ (US)', countries: ['Spain', 'Mexico', 'USA', 'United States', 'Colombia', 'Argentina'], nativeTo: ['Spain', 'Mexico', 'Colombia', 'Argentina'] },
+            { code: 'fr-FR', name: 'French', bnName: 'ফরাসি', countries: ['France', 'Canada', 'Belgium', 'Switzerland'], nativeTo: ['France'] },
+            { code: 'id-ID', name: 'Indonesian', bnName: 'ইন্দোনেশিয়ান', countries: ['Indonesia'], nativeTo: ['Indonesia'] },
+            { code: 'it-IT', name: 'Italian', bnName: 'ইতালীয়', countries: ['Italy', 'Switzerland'], nativeTo: ['Italy'] },
+            { code: 'ja-JP', name: 'Japanese', bnName: 'জাপানি', countries: ['Japan'], nativeTo: ['Japan'] },
+            { code: 'ko-KR', name: 'Korean', bnName: 'কোরিয়ান', countries: ['South Korea', 'North Korea'], nativeTo: ['South Korea', 'North Korea'] },
+            { code: 'pt-BR', name: 'Portuguese (Brazil)', bnName: 'পর্তুগিজ (ব্রাজিল)', countries: ['Brazil', 'Portugal'], nativeTo: ['Brazil', 'Portugal'] },
+            { code: 'ru-RU', name: 'Russian', bnName: 'রাশিয়ান', countries: ['Russia'], nativeTo: ['Russia'] },
+            { code: 'nl-NL', name: 'Dutch', bnName: 'ডাচ', countries: ['Netherlands', 'Belgium'], nativeTo: ['Netherlands'] },
+            { code: 'pl-PL', name: 'Polish', bnName: 'পোলিশ', countries: ['Poland'], nativeTo: ['Poland'] },
+            { code: 'tr-TR', name: 'Turkish', bnName: 'তুর্কি', countries: ['Turkey'], nativeTo: ['Turkey'] },
+            { code: 'vi-VN', name: 'Vietnamese', bnName: 'ভিয়েতনামী', countries: ['Vietnam'], nativeTo: ['Vietnam'] },
+            { code: 'fi-FI', name: 'Finnish', bnName: 'ফিনিশ', countries: ['Finland'], nativeTo: ['Finland'] },
+        ];
+        const voicesByLanguage = {
+            'Default': [{ value: 'Puck', text: 'Energetic Voice' }, { value: 'Charon', text: 'Informative Voice' }],
+            'Bengali': [{ value: 'Kore', text: 'গম্ভীর ঘোষক' }, { value: 'Puck', text: 'উৎসাহিত গল্পকার' }, { value: 'Charon', text: 'তথ্যপূর্ণ প্রশিক্ষক' }, { value: 'Orus', text: 'দৃঢ় নেতা' }, { value: 'Algenib', text: 'পরিপক্ক ও গম্ভীর' }],
+            'English': [{ value: 'Puck', text: 'Energetic Storyteller' }, { value: 'Charon', text: 'Informative Instructor' }, { value: 'Kore', text: 'Authoritative Announcer' }],
+            'Hindi': [{ value: 'Kore', text: 'आधिकारिक उद्घोषक' }, { value: 'Puck', text: 'ऊर्जावान कथावाचक' }, { value: 'Charon', text: 'सूचनात्मक प्रशिक्षक' }],
+            'Urdu': [{ value: 'Algenib', text: 'سنجیدہ ঘোষک' }, { value: 'Orus', text: 'پراعتماد رہنما' }, { value: 'Charon', text: 'معلوماتی انسٹریکٹر' }],
+            'de-DE': [{ value: 'Kore', text: 'Autoritäre Ansager' }, { value: 'Charon', text: 'Informativer Sprecher' }],
+            'it-IT': [{ value: 'Puck', text: 'Narratore Energico' }, { value: 'Enceladus', text: 'Voce Calma e Ariosa' }],
+            'fi-FI': [{ value: 'Charon', text: 'Informatiivinen kertoja' }, { value: 'Kore', text: 'Auktoriteettinen ääni' }]
+        };
+         const stylePrompts = {
+            none: "",
+            emotional: "Say in an emotional and strong speaking style: ",
+            rhythmic: "Recite the following in a rhythmic and fluent style: ",
+            motivational: "Speak in a motivational and encouraging tone: "
+        };
+
+        // --- UI Creation Functions ---
+
+        function populateLanguageList(listElement, searchElement, callback) {
+            listElement.innerHTML = '';
+            const filter = searchElement.value.toLowerCase();
+            let filteredLanguages = allLanguages.filter(lang => {
+                if (!filter) return true;
+                if (lang.name.toLowerCase().includes(filter) || lang.bnName.toLowerCase().includes(filter)) return true;
+                return lang.countries.some(country => country.toLowerCase().includes(filter));
+            });
+            filteredLanguages.sort((a, b) => {
+                const aIsNativeMatch = a.nativeTo.some(country => country.toLowerCase().includes(filter));
+                const bIsNativeMatch = b.nativeTo.some(country => country.toLowerCase().includes(filter));
+                if (aIsNativeMatch && !bIsNativeMatch) return -1;
+                if (!aIsNativeMatch && bIsNativeMatch) return 1;
+                return a.bnName.localeCompare(b.bnName);
+            });
+            filteredLanguages.forEach(lang => {
+                const item = document.createElement('a');
+                item.href = '#';
+                item.className = 'block p-2 hover:bg-slate-700/80 rounded';
+                item.textContent = `${lang.bnName} (${lang.name})`;
+                item.dataset.code = lang.code;
+                item.dataset.name = lang.name;
+                item.dataset.displayName = `${lang.bnName} (${lang.name})`;
+                item.addEventListener('click', (e) => callback(e, item));
+                listElement.appendChild(item);
+            });
+        }
+
+        function updateVoiceOptions(language) {
+            const voices = voicesByLanguage[language] || voicesByLanguage['Default'];
+            voiceSelect.innerHTML = '';
+            voices.forEach(voice => {
+                const option = document.createElement('option');
+                option.value = voice.value;
+                option.textContent = voice.text;
+                voiceSelect.appendChild(option);
+            });
+        }
+
+        // --- Initialize ---
+        function initializeApp() {
+            // Assign dynamic elements for Tone Section
+            customToneInput = document.getElementById('custom-tone-input');
+            applyToneBtn = document.getElementById('apply-tone-btn');
+            applyToneLoader = document.getElementById('apply-tone-loader');
+
+            // Assign dynamic elements for Translate Modal
+            targetLanguageSelectorBtnModal = document.getElementById('target-language-selector-btn-modal');
+            selectedTargetLanguageTextModal = document.getElementById('selected-target-language-text-modal');
+            targetLanguageDropdownModal = document.getElementById('target-language-dropdown-modal');
+            targetLanguageSearchModal = document.getElementById('target-language-search-modal');
+            targetLanguageListModal = document.getElementById('target-language-list-modal');
+            applyTranslationBtnModal = document.getElementById('apply-translation-btn-modal');
+            applyTranslationLoaderModal = document.getElementById('apply-translation-loader-modal');
+
+            // Assign dynamic elements for API Settings
+            apiKeyInput = document.getElementById('api-key-input');
+            saveApiKeyBtn = document.getElementById('save-api-key-btn');
+            useDefaultKeyBtn = document.getElementById('use-default-key-btn');
+            apiStatus = document.getElementById('api-status');
+
+            // Add event listeners
+            applyToneBtn.addEventListener('click', applyTone);
+            applyTranslationBtnModal.addEventListener('click', applyTranslation); // Use modal button
+            saveApiKeyBtn.addEventListener('click', saveApiKey);
+            useDefaultKeyBtn.addEventListener('click', useDefaultApiKey);
+
+             populateLanguageList(targetLanguageListModal, targetLanguageSearchModal, (e, item) => { // Use modal list/search
+                e.preventDefault();
+                selectedTargetLanguage = item.dataset.name;
+                selectedTargetLanguageDisplay = item.dataset.displayName; // Store display name
+                selectedTargetLanguageTextModal.textContent = item.dataset.displayName; // Update modal text
+                targetLanguageDropdownModal.classList.add('hidden');
+            });
+            targetLanguageSelectorBtnModal.addEventListener('click', () => { // Use modal button
+                targetLanguageDropdownModal.classList.toggle('hidden');
+            });
+             targetLanguageSearchModal.addEventListener('input', () => populateLanguageList(targetLanguageListModal, targetLanguageSearchModal, (e, item) => { // Search listener for modal
+                e.preventDefault();
+                selectedTargetLanguage = item.dataset.name;
+                selectedTargetLanguageDisplay = item.dataset.displayName;
+                selectedTargetLanguageTextModal.textContent = item.dataset.displayName;
+                targetLanguageDropdownModal.classList.add('hidden');
+            }));
+
+            apiKeyInput.value = localStorage.getItem('userApiKey') || '';
+
+            populateLanguageList(languageList, languageSearch, (e, item) => {
+                e.preventDefault();
+                selectedLanguage = item.dataset.code;
+                selectedLanguageText.textContent = item.dataset.displayName;
+                languageDropdown.classList.add('hidden');
+                updateVoiceOptions(selectedLanguage);
+            });
+            updateVoiceOptions(selectedLanguage);
+        }
+
+        initializeApp();
+
+        // --- Event Listeners ---
+        languageSelectorBtn.addEventListener('click', () => languageDropdown.classList.toggle('hidden'));
+        languageSearch.addEventListener('input', () => populateLanguageList(languageList, languageSearch, (e, item) => {
+            e.preventDefault();
+            selectedLanguage = item.dataset.code;
+            selectedLanguageText.textContent = item.dataset.displayName;
+            languageDropdown.classList.add('hidden');
+            updateVoiceOptions(selectedLanguage);
+        }));
+
+        document.addEventListener('click', (e) => {
+            if (!languageSelectorBtn.contains(e.target) && !languageDropdown.contains(e.target)) languageDropdown.classList.add('hidden');
+            // Close translate modal dropdown if click outside
+            if (targetLanguageSelectorBtnModal && targetLanguageDropdownModal && !targetLanguageSelectorBtnModal.contains(e.target) && !targetLanguageDropdownModal.contains(e.target)) {
+                 targetLanguageDropdownModal.classList.add('hidden');
+            }
+        });
+
+        textInput.addEventListener('input', () => {
+            const charCount = textInput.value.length;
+            charCounter.textContent = `${charCount} / ${MAX_CHARS}`;
+            charCounter.classList.toggle('text-red-400', charCount > MAX_CHARS);
+
+            const hasText = textInput.value.trim().length > 0;
+            changeToneBtn.classList.toggle('hidden', !hasText);
+            translateScriptBtn.classList.toggle('hidden', !hasText);
+            if(!hasText) {
+                 toggleCollapsibleSection(null); // Hide tone section if text is cleared
+            }
+
+            clearTimeout(debounceTimeout);
+            if (hasText && textInput.value.trim().length > 20) {
+                 autoDetectStatus.classList.remove('opacity-0');
+                debounceTimeout = setTimeout(() => {
+                    detectLanguage(textInput.value);
+                }, 1500);
+            } else {
+                autoDetectStatus.classList.add('opacity-0');
+            }
+        });
+
+        apiSettingsBtn.addEventListener('click', () => {
+             const isHidden = apiSettingsSection.classList.contains('hidden');
+             apiSettingsSection.classList.toggle('hidden');
+             setTimeout(() => {
+                apiSettingsSection.classList.toggle('max-h-0', !isHidden);
+                // Adjust height dynamically based on content or use a fixed height
+                apiSettingsSection.style.maxHeight = isHidden ? '200px' : '0px';
+             }, 10);
+        });
+
+        function saveApiKey() {
+            if (apiKeyInput) {
+                const newKey = apiKeyInput.value.trim();
+                if (newKey) {
+                    localStorage.setItem('userApiKey', newKey);
+                    apiKey = newKey;
+                    showApiStatus('API কী সফলভাবে সংরক্ষণ করা হয়েছে।');
+                } else {
+                    showApiStatus('অনুগ্রহ করে একটি বৈধ API কী লিখুন।', true);
+                }
+            }
+        }
+
+        function useDefaultApiKey() {
+            localStorage.removeItem('userApiKey');
+            apiKey = DEFAULT_API_KEY;
+            if(apiKeyInput) apiKeyInput.value = '';
+            showApiStatus('ডিফল্ট API কী এখন সক্রিয়।');
+        }
+
+        // Simplified toggle for only the Tone section now
+        function toggleCollapsibleSection(sectionToToggle) {
+             if (sectionToToggle === customToneSection) {
+                 const isHidden = customToneSection.classList.contains('hidden');
+                 customToneSection.classList.toggle('hidden');
+                 setTimeout(() => {
+                    customToneSection.classList.toggle('max-h-0', !isHidden);
+                    customToneSection.style.maxHeight = isHidden ? '200px' : '0px';
+                 }, 10);
+                 speechStyleSelect.disabled = isHidden; // Disable speech style only if tone section is open
+             } else {
+                 // If hiding all (passed null)
+                  if (!customToneSection.classList.contains('hidden')) {
+                     customToneSection.classList.add('max-h-0');
+                     setTimeout(() => customToneSection.classList.add('hidden'), 300);
+                 }
+                 speechStyleSelect.disabled = false;
+             }
+        }
+
+        changeToneBtn.addEventListener('click', () => toggleCollapsibleSection(customToneSection));
+        translateScriptBtn.addEventListener('click', () => { // Open translate modal
+            hideError(); // Clear any previous errors
+            selectedTargetLanguageTextModal.textContent = selectedTargetLanguageDisplay; // Ensure modal shows current selection
+            translateModal.classList.remove('hidden');
+            setTimeout(() => translateModal.classList.remove('modal-scale-enter-from'), 10);
+        });
+
+        // Modal Logic
+        closeModalOverviewBtn.addEventListener('click', () => {
+            overviewModal.classList.add('modal-scale-leave-to');
+            setTimeout(() => {
+                overviewModal.classList.add('hidden');
+                overviewModal.classList.remove('modal-scale-leave-to');
+            }, 300);
+        });
+
+        overviewModal.addEventListener('click', (e) => {
+            if (e.target === overviewModal) {
+                closeModalOverviewBtn.click();
+            }
+        });
+
+        closeModalTranslateBtn.addEventListener('click', () => {
+            translateModal.classList.add('modal-scale-leave-to');
+            setTimeout(() => {
+                translateModal.classList.add('hidden');
+                translateModal.classList.remove('modal-scale-leave-to');
+            }, 300);
+        });
+
+        translateModal.addEventListener('click', (e) => {
+             if (e.target === translateModal) {
+                closeModalTranslateBtn.click();
+            }
+        });
+
+
+        function showOverviewModal(overviewText) {
+            modalOverviewContent.textContent = overviewText;
+            overviewModal.classList.remove('hidden');
+            setTimeout(() => overviewModal.classList.remove('modal-scale-enter-from'), 10);
+        }
+
+        // --- Main Logic ---
+        async function fetchWithRetry(url, options, maxRetries = 3) {
+            let delay = 1000; // Initial delay 1 second
+            let lastError = null; // Store last error
+
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+
+                    if (response.status === 429) { // Specific handling for 429
+                        const errorText = await response.text();
+                        console.warn("API Rate Limit Exceeded:", errorText);
+                        let retryDelaySeconds = delay / 1000; // Default delay
+                        try {
+                            const errorJson = JSON.parse(errorText);
+                            const retryInfo = errorJson.error?.details?.find(d => d['@type'] === 'type.googleapis.com/google.rpc.RetryInfo');
+                            if (retryInfo?.retryDelay) {
+                                // Extract seconds from duration string like "55s"
+                                const match = retryInfo.retryDelay.match(/(\d+)s/);
+                                if (match && match[1]) {
+                                    retryDelaySeconds = parseInt(match[1], 10);
+                                    delay = retryDelaySeconds * 1000; // Update delay for the wait
+                                }
+                            }
+                        } catch (parseErr) {
+                             console.error("Could not parse 429 error details:", parseErr);
+                        }
+                         showError(`API ব্যবহারের সীমা অতিক্রম হয়েছে। ${retryDelaySeconds} সেকেন্ড পর আবার চেষ্টা করা হচ্ছে... (${i+1}/${maxRetries})। অনুগ্রহ করে নিজের API কী ব্যবহার করুন।`);
+                         lastError = new Error('rate_limit'); // Special error for rate limit
+                         throw lastError; // Go to catch block for retry delay
+                    }
+
+                    if (response.status === 503) {
+                         showError(`সার্ভার ব্যস্ত। ${delay/1000} সেকেন্ড পর আবার চেষ্টা করা হচ্ছে... (${i+1}/${maxRetries})`);
+                         lastError = new Error('overloaded');
+                         throw lastError;
+                    }
+                     if (!response.ok) { // Catch other errors too
+                        const errorText = await response.text();
+                        console.error("API Error Response:", errorText);
+                        try {
+                            const errorJson = JSON.parse(errorText);
+                            lastError = new Error(errorJson.error?.message || `API Error: ${response.status}`);
+                        } catch (parseError) {
+                            lastError = new Error(`API Error: ${response.status} - ${errorText.substring(0, 100)}`);
+                        }
+                         throw lastError;
+                    }
+                    hideError(); // Clear error on success
+                    return response; // Success
+                } catch (error) {
+                     lastError = error; // Update last error
+                     if (i === maxRetries - 1) {
+                        console.error(`Final attempt failed after ${maxRetries} retries.`);
+                        throw lastError; // Throw final error if max retries reached
+                    }
+                    console.warn(`Attempt ${i+1} failed. Retrying in ${delay/1000}s...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2; // Exponential backoff only for non-429 errors or if 429 parsing failed
+                }
+            }
+             // This part should theoretically not be reached if error handling above is correct
+            throw lastError || new Error('সর্বোচ্চ চেষ্টার পরও API কল ব্যর্থ হয়েছে।');
+        }
+
+
+        async function detectLanguage(text) {
+            languageSelectorBtn.classList.add('ring-2', 'ring-yellow-500');
+            autoDetectStatus.classList.remove('opacity-0');
+            try {
+                const detectPrompt = `Identify the primary language of the following text. Respond with only the English name of the language from this list: [Bengali, Hindi, Urdu, English (US), Arabic (Egypt), German, Spanish (US), French, Indonesian, Italian, Japanese, Korean, Portuguese (Brazil), Russian, Dutch, Polish, Turkish, Vietnamese, Finnish]. Text: "${text.substring(0, 250).replace(/"/g, '\\"')}"`;
+                let detectedLanguageName = await callTextGenerationAPI(detectPrompt);
+                detectedLanguageName = detectedLanguageName.trim();
+
+                let languageObject = allLanguages.find(lang => lang.name === detectedLanguageName || lang.code === detectedLanguageName) || allLanguages.find(lang => lang.name.includes(detectedLanguageName));
+
+                if (languageObject) {
+                    selectedLanguage = languageObject.code;
+                    selectedLanguageText.textContent = `${languageObject.bnName} (${languageObject.name})`;
+                    updateVoiceOptions(selectedLanguage);
+                    languageSelectorBtn.classList.replace('ring-yellow-500', 'ring-green-500');
+                } else {
+                    console.warn("Detected language not in known list:", detectedLanguageName);
+                    languageSelectorBtn.classList.replace('ring-yellow-500', 'ring-red-500');
+                }
+            } catch (error) {
+                console.error("Language detection failed:", error);
+                languageSelectorBtn.classList.replace('ring-yellow-500', 'ring-red-500');
+                 showError("ভাষা সনাক্তকরণ ব্যর্থ হয়েছে: " + error.message); // Show error to user
+            } finally {
+                setTimeout(() => {
+                    languageSelectorBtn.classList.remove('ring-2', 'ring-yellow-500', 'ring-green-500', 'ring-red-500');
+                    autoDetectStatus.classList.add('opacity-0');
+                }, 2000);
+            }
+        }
+
+        async function applyTone() {
+            const rawText = textInput.value.trim();
+            const customTone = customToneInput.value.trim();
+
+            if (!rawText) return showError('অনুগ্রহ করে প্রথমে কিছু লেখা লিখুন।');
+            hideError();
+            applyToneLoader.classList.remove('hidden');
+            applyToneBtn.disabled = true;
+
+            try {
+                const engineerPrompt = `You are a Universal Maestro of Vocal Expression. Your mission is to transform ANY script in ANY language into a performance-ready annotated script.
+**Critical Mandate:** ALL annotations MUST be in **concise, simple English**.
+**Core Directives:**
+1. **Detect Language:** Instantly detect the script's language and respect its nuances.
+2. **Preserve Original:** **DO NOT** alter the user’s original words. Only add English annotations in parentheses.
+3. **Director's Notes (English):** Guide pacing, emotion, dynamics, breath, and cultural sensitivity.
+4. **Emotional Arc:** If no tone is specified, apply a default arc (solemn -> intense -> tender -> resolved). Prioritize user's tone if provided.
+5. **Output Format:** Return the annotated script. Then, on a new line, write "---" followed by a short "Performance Overview" in the script's original language.
+6. **FINAL CHECKLIST (MANDATORY):** Are ALL original words 100% intact? Are ALL notes in English? Does it feel like a live performance?
+---
+**User's Request:**
+* **Desired Tone:** "${customTone || 'Default Emotional Arc'}"
+* **Script to Annotate:** "${rawText.replace(/"/g, '\\"')}"`;
+                const fullResponse = await callTextGenerationAPI(engineerPrompt);
+                const parts = fullResponse.split('---');
+                textInput.value = parts[0].trim();
+                if (parts[1]) {
+                    showOverviewModal(parts[1].trim());
+                }
+                 toggleCollapsibleSection(null); // Close the section after applying
+            } catch (error) {
+                showError('স্ক্রিপ্ট উন্নত করা সম্ভব হয়নি। ' + error.message);
+            } finally {
+                applyToneLoader.classList.add('hidden');
+                applyToneBtn.disabled = false;
+            }
+        }
+
+        async function applyTranslation() {
+            const rawText = textInput.value.trim();
+
+            if (!rawText) return showError('অনুগ্রহ করে কিছু লেখা লিখুন।');
+            hideError();
+            applyTranslationLoaderModal.classList.remove('hidden');
+            applyTranslationBtnModal.disabled = true;
+
+            try {
+                const translatePrompt = `You are an expert linguist. Translate the following text into ${selectedTargetLanguage}. Preserve the original meaning, nuances, and tone perfectly. Respond ONLY with the translated text. Text to Translate: "${rawText.replace(/"/g, '\\"')}"`;
+                textInput.value = await callTextGenerationAPI(translatePrompt);
+                const targetLangObject = allLanguages.find(lang => lang.name === selectedTargetLanguage);
+                if (targetLangObject) {
+                    selectedLanguage = targetLangObject.code;
+                    selectedLanguageText.textContent = targetLangObject.bnName + ` (${targetLangObject.name})`;
+                    updateVoiceOptions(selectedLanguage);
+                }
+                closeModalTranslateBtn.click(); // Close modal on success
+            } catch (error) {
+                showError('অনুবাদ করা সম্ভব হয়নি। ' + error.message);
+            } finally {
+                applyTranslationLoaderModal.classList.add('hidden');
+                applyTranslationBtnModal.disabled = false;
+            }
+        }
+
+        async function callTextGenerationAPI(prompt) {
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const requestBody = { contents: [{ parts: [{ text: prompt }] }] };
+            // Use fetchWithRetry for text generation as well
+            const response = await fetchWithRetry(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
+            // Error handling is now inside fetchWithRetry
+            const result = await response.json();
+             if (!result.candidates || !result.candidates[0].content || !result.candidates[0].content.parts || !result.candidates[0].content.parts[0].text) {
+                console.error("Unexpected API response structure:", result);
+                throw new Error("API থেকে অপ্রত্যাশিত ফলাফল এসেছে।");
+            }
+            return result.candidates[0].content.parts[0].text;
+        }
+
+        convertBtn.addEventListener('click', async () => {
+            const rawText = textInput.value.trim();
+            if (rawText.length > MAX_CHARS) return showError(`লেখাটি ${MAX_CHARS} অক্ষরের বেশি হতে পারবে না।`);
+            if (!rawText) return showError('অনুগ্রহ করে কিছু লেখা লিখুন।');
+
+            hideError();
+            audioOutput.classList.add('hidden'); // Hide previous audio
+            convertBtn.disabled = true; // Disable button immediately
+
+            // Start showing the generating overlay
+            appHeader.classList.add('opacity-0', 'pointer-events-none');
+            mainContent.classList.add('opacity-0', 'pointer-events-none');
+            appFooter.classList.add('opacity-0', 'pointer-events-none');
+            generatingOverlay.classList.remove('hidden');
+            setTimeout(() => generatingOverlay.classList.remove('opacity-0'), 10);
+
+            const startTime = performance.now();
+            let success = false;
+            let audioUrl = null;
+            let wavBlob = null;
+            let errorOccurred = null;
+
+
+            try {
+                let textToConvert = rawText.split('---')[0].trim(); // Use only script part
+                const selectedStyle = speechStyleSelect.value;
+                // Apply style prompt only if the tone section is closed AND style is not 'none'
+                if (selectedStyle !== 'none' && customToneSection.classList.contains('hidden')) {
+                    // Find the language name for the prompt
+                     const currentLangObj = allLanguages.find(l => l.code === selectedLanguage) || {};
+                     const langNameForPrompt = currentLangObj.name || selectedLanguage; // Fallback to code if name not found
+                     let promptPrefix = '';
+                      // Use English prompts for better compatibility as requested earlier
+                     switch(selectedStyle) {
+                         case 'emotional': promptPrefix = `Say in an emotional and strong speaking style: `; break;
+                         case 'rhythmic': promptPrefix = `Recite the following in a rhythmic and fluent style: `; break;
+                         case 'motivational': promptPrefix = `Speak in a motivational and encouraging tone: `; break;
+                     }
+                     textToConvert = promptPrefix + textToConvert;
+                }
+
+                const ttsApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+                const requestBody = { model: "gemini-2.5-flash-preview-tts", contents: [{ parts: [{ text: textToConvert }] }], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceSelect.value } } } } };
+
+                // Use fetchWithRetry for TTS call
+                const response = await fetchWithRetry(ttsApiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(requestBody) });
+                // Error handling is inside fetchWithRetry now
+
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType;
+
+                if (audioData && mimeType?.startsWith("audio/")) {
+                    const sampleRate = parseInt(mimeType.match(/rate=(\d+)/)?.[1] || 24000, 10);
+                    const pcmDataBytes = base64ToArrayBuffer(audioData); // Get Uint8Array
+                    const pcmDataInt16 = new Int16Array(pcmDataBytes.buffer); // Convert buffer to Int16Array
+                    wavBlob = pcmToWav(pcmDataInt16, sampleRate);
+                    audioUrl = URL.createObjectURL(wavBlob);
+                    success = true; // Mark as success
+                } else {
+                     console.error("Unexpected TTS API response structure:", result);
+                    throw new Error('API থেকে কোনো অডিও ডেটা পাওয়া যায়নি।');
+                }
+            } catch (error) {
+                // errorOccurred = error.message || 'কণ্ঠ তৈরি করা সম্ভব হয়নি।';
+                 // Don't override the specific error shown by fetchWithRetry for quota issues
+                 if (!errorMessage.textContent.includes('API ব্যবহারের সীমা অতিক্রম হয়েছে')) {
+                    errorOccurred = error.message || 'কণ্ঠ তৈরি করা সম্ভব হয়নি।';
+                 } else {
+                     errorOccurred = errorMessage.textContent; // Keep the quota message
+                 }
+            } finally {
+                const endTime = performance.now();
+                const elapsedTime = endTime - startTime;
+                const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime);
+
+                // Wait for minimum display time
+                setTimeout(() => {
+                    // Hide generating overlay
+                    generatingOverlay.classList.add('opacity-0');
+                    setTimeout(() => generatingOverlay.classList.add('hidden'), 500); // Wait for fade out
+
+                    // Show main content
+                    appHeader.classList.remove('opacity-0', 'pointer-events-none');
+                    mainContent.classList.remove('opacity-0', 'pointer-events-none');
+                    appFooter.classList.remove('opacity-0', 'pointer-events-none');
+
+                    // Handle result
+                    if (success && audioUrl) {
+                        audioOutput.classList.remove('hidden');
+                        loader.classList.add('hidden'); // Ensure loader inside audio output is hidden
+                        audioPlayer.src = audioUrl;
+                        audioPlayer.classList.remove('hidden');
+                        downloadLink.href = audioUrl;
+                        downloadLink.classList.remove('hidden');
+                    } else {
+                        // Show error only if it wasn't a quota message already shown
+                         if (errorOccurred && !errorOccurred.includes('API ব্যবহারের সীমা অতিক্রম হয়েছে')) {
+                             showError(errorOccurred);
+                         } else if (errorOccurred) {
+                              showError(errorOccurred); // Still show the quota message
+                         }
+                        audioOutput.classList.add('hidden'); // Hide audio section on error
+                    }
+                    convertBtn.disabled = false; // Re-enable button
+                }, remainingTime);
+            }
+        });
+
+        // --- Helper Functions ---
+        function showApiStatus(message, isError = false) {
+            const statusEl = document.getElementById('api-status');
+            if(statusEl) {
+                statusEl.textContent = message;
+                statusEl.className = `text-xs text-center mt-2 font-medium ${isError ? 'text-red-400' : 'text-green-400'}`;
+                statusEl.classList.remove('hidden');
+                setTimeout(() => statusEl.classList.add('hidden'), 3000);
+            }
+        }
+        function base64ToArrayBuffer(base64) {
+            const binaryString = atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+            return bytes; // Return Uint8Array directly
+        }
+        function pcmToWav(pcmData, sampleRate) { // Expects Int16Array
+            const dataSize = pcmData.byteLength;
+            const buffer = new ArrayBuffer(44 + dataSize);
+            const view = new DataView(buffer);
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + dataSize, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true); // Subchunk1Size (16 for PCM)
+            view.setUint16(20, 1, true); // AudioFormat (1 for PCM)
+            view.setUint16(22, 1, true); // numChannels (mono)
+            view.setUint32(24, sampleRate, true); // SampleRate
+            view.setUint32(28, sampleRate * 2, true); // ByteRate (SampleRate * NumChannels * BitsPerSample/8)
+            view.setUint16(32, 2, true); // BlockAlign (NumChannels * BitsPerSample/8)
+            view.setUint16(34, 16, true); // BitsPerSample (16)
+            writeString(view, 36, 'data');
+            view.setUint32(40, dataSize, true); // Subchunk2Size
+            // Write PCM data from Int16Array
+            new Int16Array(buffer, 44).set(pcmData);
+            return new Blob([view], { type: 'audio/wav' });
+        }
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+        }
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.remove('hidden');
+        }
+        function hideError() {
+            errorMessage.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
+
         @keyframes bounceDot3 {
             0%, 40%, 80%, 100% { transform: translateY(0); opacity: 1; }
             60% { transform: translateY(-5px); opacity: 0.5; }
